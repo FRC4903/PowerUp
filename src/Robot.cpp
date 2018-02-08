@@ -28,6 +28,8 @@ using namespace std;
 
 
 class Robot : public frc::IterativeRobot {
+	
+public:
 	Timer *timer = new Timer();
 
 	Ultrasonic *ultra;

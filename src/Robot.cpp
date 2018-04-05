@@ -1,4 +1,3 @@
-
 #include <string>
 #include <bits/stdc++.h>
 
@@ -8,16 +7,24 @@
 #include <SmartDashboard/SmartDashboard.h>
 #include <Ultrasonic.h>
 #include "ctre/Phoenix.h"
-#include "WPILib.h"
-
+//#include "WPILib.h"
+//#include "Phoenix.h"
+#include "DoubleSolenoid.h"
+#include "ADXRS450_Gyro.h"
+#include "DriverStation.h"
 #include <Timer.h>
+#include "Preferences.h"
+#include "Joystick.h"
+#include "AnalogInput.h"
 
 using namespace frc;
 using namespace std;
 
 
-class Robot : public frc::IterativeRobot {
 
+
+
+class Robot : public frc::IterativeRobot {
 
 public:
 	Timer *timer = new Timer();
@@ -25,12 +32,18 @@ public:
 
 	Ultrasonic *ultraFront;
 	TalonSRX talonRight1, talonRight2, talonLeft1, talonLeft2;
-	TalonSRX ropeTalon1, ropeTalon2;
-	TalonSRX elevatorTalon;
 
-	TalonSRX cubeLiftMotor;
+
+	TalonSRX *cubeLiftMotor;
+
+	TalonSRX hookTalon1;
+	TalonSRX hookTalon2;
+
 	AnalogInput cubeLiftInductiveTop;
 	AnalogInput cubeLiftInductiveBottom;
+
+	AnalogInput hookLiftInductiveTop;
+	AnalogInput hookLiftInductiveBottom;
 
 	ADXRS450_Gyro gyro;
 
@@ -38,9 +51,9 @@ public:
 
 	TalonSRX cubeIntakeTalonLeft, cubeIntakeTalonRight;
 	DoubleSolenoid *cubeArmTiltSole = new DoubleSolenoid(6 ,1);
-	DoubleSolenoid *climbArmTiltSole = new DoubleSolenoid(7,0);
 
 	bool topInductiveSensor, bottomInductiveSensor;
+	bool topHookInductiveSensor, bottomHookInductiveSensor;
 
 	bool initialValueSet = false;
 	double initialLiftPosition = 0;
@@ -68,6 +81,8 @@ public:
 
 	bool done = false;
 
+	Timer *autoTimer = new Timer();
+
 
 
 	// SETUP SECTION
@@ -76,16 +91,13 @@ public:
 	//
 
 	Robot() : talonRight1(1), talonRight2(2),
-			elevatorTalon(3),
 			talonLeft1(4), talonLeft2(5),
 			cubeIntakeTalonLeft(7),cubeIntakeTalonRight(8),
 			joystickMain(0),
-			/*dInput(1),dInput2(2),*/
 			joystickMechanisms(1),
-			ropeTalon1(9), ropeTalon2(10),
-			cubeLiftInductiveTop(0),cubeLiftInductiveBottom(1),
-			cubeLiftMotor(6)
+			cubeLiftInductiveTop(0),cubeLiftInductiveBottom(1),hookTalon1(9),hookTalon2(10),hookLiftInductiveTop(2),hookLiftInductiveBottom(3)
 	{
+		cubeLiftMotor = new TalonSRX(6);
 		preferences = Preferences::GetInstance();
 //		driverStation = DriverStation::GetInstance();
 	}
@@ -105,10 +117,10 @@ public:
 		talonRight1.SetInverted(true);
 		talonRight2.SetInverted(true);
 
-		elevatorTalon.SetInverted(true);
+		autoTimer->Start();
+
 
 		cubeArmTiltSole->Set(DoubleSolenoid::kReverse);
-		climbArmTiltSole->Set(DoubleSolenoid::kForward);
 
 
 		gyro.Calibrate();
@@ -119,13 +131,16 @@ public:
 
 		cubeIntakeTalonLeft.SetInverted(true);
 
-		cubeLiftMotor.SetNeutralMode(NeutralMode::Brake);
+		cubeLiftMotor->SetNeutralMode(NeutralMode::Brake);
 
 
 		talonRight1.SetNeutralMode(NeutralMode::Coast);
 		talonRight2.SetNeutralMode(NeutralMode::Coast);
 		talonLeft1.SetNeutralMode(NeutralMode::Coast);
 		talonLeft2.SetNeutralMode(NeutralMode::Coast);
+
+		hookTalon1.SetNeutralMode(NeutralMode::Brake);
+		hookTalon2.SetNeutralMode(NeutralMode::Brake);
 
 		setupEncoderTalon(&talonLeft2);
 		setupEncoderTalon(&talonRight1);
@@ -180,40 +195,151 @@ public:
 
 	void AutonomousInit() {
 		gyro.Reset();
-		climbArmTiltSole->Set(DoubleSolenoid::kReverse);
 
 		gameData = DriverStation::GetInstance().GetGameSpecificMessage();
 		setCubeArmTilt(false);
 
 		driveSystemCoastMode(false);
 		done= false;
+
+		autoTimer->Reset();
 	}
 
 	void autoCubeDown() {
 
 		getInductiveSensors();
-		while(!bottomInductiveSensor) {
+		while(!bottomInductiveSensor && autoTimer->Get() < 15) {
 			getInductiveSensors();
-			cubeLiftMotor.Set(ControlMode::PercentOutput,-1.0);
+			cubeLiftMotor->Set(ControlMode::PercentOutput,-1.0);
 		}
-		cubeLiftMotor.Set(ControlMode::PercentOutput,0.0);
+		cubeLiftMotor->Set(ControlMode::PercentOutput,0.0);
 	}
 
 	void autoCubeUp() {
 		getInductiveSensors();
-		while(!topInductiveSensor) {
+		while(!topInductiveSensor && autoTimer->Get() < 15) {
 			getInductiveSensors();
-			cubeLiftMotor.Set(ControlMode::PercentOutput,1.0);
+			cubeLiftMotor->Set(ControlMode::PercentOutput,1.0);
 		}
-		cubeLiftMotor.Set(ControlMode::PercentOutput,0.0);
+		cubeLiftMotor->Set(ControlMode::PercentOutput,0.0);
 	}
 
 	void autoCubeIn() {
-		while(ultraFront->GetRangeInches() > 10) {
+		while(ultraFront->GetRangeInches() > 10 && autoTimer->Get() < 15) {
 			setCubeMotors(-0.8);
 		}
 		setCubeMotors(0.0);
 	}
+
+	void goForwardAndUp(int inchesInt, double speed=0.5)
+	{
+		double inches = double(inchesInt);
+		const double encoderConst = 35.34; // Ratio adjustment from encoder ticks to inches
+
+//		const double a = 0.023944549;
+//		const double b = 35.24782609/2.0;
+
+//		const double a = 0.9467455621;
+//		const double b = -2.840236686;
+//		const double c = 42.130177514;
+
+		double initRight = talonRight1.GetSelectedSensorPosition(kPIDLoopIdx);
+		double initLeft  = talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx);
+
+		double rightside = speed;
+		double leftside  = speed;
+		setRight(rightside);
+		setLeft(leftside);
+//		(inches*inches * a) + b*inches + c
+		const double a = 31.66666666666;
+		double b = -265.0;
+
+		if(inches >= 200)
+		{
+			b = 200.0;
+		}
+		else if(inches >= 100) {
+			 b = 0.0;
+		}
+
+
+		double distance = inches*a + b;
+
+		if (inches > 137 && inches < 143)
+		{
+			distance = 4450;
+		}
+		else if (inches > 69 && inches < 71)
+		{
+			distance = 2000;
+		}
+		else if (inches > 196 && inches < 201)
+		{
+			distance = 6756;
+		}
+		else if (inches > 219 && inches < 225)
+		{
+			distance = 8498;
+		}
+
+		while (distance > -(initLeft - talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx)))
+		{
+			getInductiveSensors();
+			if (!topInductiveSensor) {
+				cubeLiftMotor->Set(ControlMode::PercentOutput,1.0);
+			}
+			else
+			{
+				cubeLiftMotor->Set(ControlMode::PercentOutput,0.0);
+			}
+			//0.2 before
+			rightside = speed;
+			leftside = speed;
+			double coeff = 0.004;
+			setRight(rightside);
+			setLeft(leftside);
+		}
+		setRight(0.0);
+		setLeft(0.0);
+		autoCubeUp();
+	}
+
+
+
+	void goBackAndBringDown(double inches, double speed=0.4)
+	{
+		const double encoderConst = 35.34; // Ratio adjustment from encoder ticks to inches
+		const double a = 0.023944549;
+		const double b = 35.24782609;
+		double initRight = talonRight1.GetSelectedSensorPosition(kPIDLoopIdx);
+		double initLeft  = talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx);
+		double rightside = -speed;
+		double leftside  = -speed;
+		setRight(rightside);
+		setLeft(leftside);
+
+		while (b*inches > (initLeft - talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx)))
+		{
+			getInductiveSensors();
+			if (!bottomInductiveSensor) {
+				cubeLiftMotor->Set(ControlMode::PercentOutput,-1.0);
+			}
+			else
+			{
+				cubeLiftMotor->Set(ControlMode::PercentOutput,0.0);
+			}
+			//0.2 before
+			rightside = -speed;
+			leftside = -speed;
+			double coeff = 0.004;
+			setRight(rightside);
+			setLeft(leftside);
+		}
+		setRight(0.0);
+		setLeft(0.0);
+		autoCubeDown();
+	}
+
 
 	void AutonomousPeriodic() {
 		if(gameData.length() > 0 && !done)
@@ -278,12 +404,30 @@ public:
 					shootCubeOutAuto();
 				}
 				else if (switchPos == 'R') {
-					goForwardInInches(21);
-					turn(90);
-					goForwardInInches(36);
-					turn(-90);
+//					goForwardInInches(21);
+//					turn(90);
+//					goForwardInInches(36);
+//					turn(-90);
+//					forwardUltrasonic();
+//					shootCubeOutAuto();
+					goForwardInInches(15);
+					turn(45);
+					goForwardInInches(55);
+					turn(-45);
 					forwardUltrasonic();
 					shootCubeOutAuto();
+
+					goBackAndBringDown(15);
+					turn(45);
+					goBackInInches(35);
+					turn(-45);
+					ultraTakeInMoveForward();
+					goBackInInches(15);
+					turn(45);
+					goForwardAndUp(25);
+					turn(-45);
+					forwardUltrasonic();
+					shootCubeOutAuto(0.5);
 				}
 			}
 			else if(pos == 3) { // right
@@ -380,7 +524,7 @@ public:
 	void shootCubeOutAuto(double speed=0.2) {
 		setCubeMotors(speed);
 		double start = timer->Get();
-		while(timer->Get() - start < 1) {
+		while(timer->Get() - start < 1 && autoTimer->Get() < 15) {
 			int a = 0;
 		}
 
@@ -417,7 +561,7 @@ public:
 		}
 	}
 
-	void goForwardInInches(int inchesInt, double speed = 0.4)
+	void goForwardInInches(int inchesInt, double speed = 0.5)
 	{
 		double inches = double(inchesInt);
 		const double encoderConst = 35.34; // Ratio adjustment from encoder ticks to inches
@@ -429,9 +573,9 @@ public:
 //		const double b = -2.840236686;
 //		const double c = 42.130177514;
 
+
 		double initRight = talonRight1.GetSelectedSensorPosition(kPIDLoopIdx);
 		double initLeft  = talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx);
-
 		double rightside = speed;
 		double leftside  = speed;
 		setRight(rightside);
@@ -468,7 +612,7 @@ public:
 			distance = 8498;
 		}
 
-		while (distance > -(initLeft - talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx)))
+		while (distance > -(initLeft - talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx)) && autoTimer->Get() < 15)
 		{
 			//0.2 before
 			rightside = speed;
@@ -494,7 +638,7 @@ public:
 			setRight(rightside);
 			setLeft(leftside);
 
-			while (b*inches > (initLeft - talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx)))
+			while (b*inches > (initLeft - talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx)) && autoTimer->Get() < 15)
 			{
 				//0.2 before
 				rightside = -speed;
@@ -507,11 +651,11 @@ public:
 			setLeft(0.0);
 		}
 
-	void forwardUltrasonic(double halfSpeed = 0.15, double dist = 18)
+	void forwardUltrasonic(double halfSpeed = 0.30, double dist = 28)
 	{
 		double initDist = ultraFront->GetRangeInches();
 		int counter = 0;
-		while (ultraFront->GetRangeInches() > dist)
+		while (ultraFront->GetRangeInches() > dist && autoTimer->Get() < 15)
 		{
 			if (counter < 20)
 			{
@@ -528,11 +672,11 @@ public:
 		setLeft(0.0);
 	}
 
-	void ultraTakeInMoveForward(double halfSpeed = 0.075, double dist = 10)
+	void ultraTakeInMoveForward(double halfSpeed = 0.075, double dist = 15)
 	{
 		double initDist = ultraFront->GetRangeInches();
 		int counter = 0;
-		while (ultraFront->GetRangeInches() > dist)
+		while (ultraFront->GetRangeInches() > dist && autoTimer->Get() < 15)
 		{
 			setCubeMotors(-0.6);
 			if (counter < 20)
@@ -562,7 +706,7 @@ public:
 			gyro.Reset();
 			if (angle > 0)
 			{
-				while (gyro.GetAngle() < angle)
+				while (gyro.GetAngle() < angle && autoTimer->Get() < 15)
 				{
 					double speed = initial + initial * (1 -  gyro.GetAngle() / angle)/2;
 					setRight(-speed);
@@ -571,7 +715,7 @@ public:
 			}
 			else if (angle < 0)
 			{
-				while (gyro.GetAngle() > angle)
+				while (gyro.GetAngle() > angle && autoTimer->Get() < 15)
 				{
 					double speed = initial + initial * (1 - abs(gyro.GetAngle() / angle))/2;
 					setRight(speed);
@@ -608,7 +752,6 @@ public:
 		timer->Reset();
 
 		reverseDrive = false;
-
 
 		lefty  = talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx);
 
@@ -651,7 +794,7 @@ public:
 		j_y = joystickMain.GetRawAxis(0) * moderator;
 
 
-		reverseDrive = joystickMain.GetRawButton(7);
+		reverseDrive = joystickMain.GetRawButton(5);
 
 		double speedL = +j_y - j_x;
 		double speedR = -j_y - j_x;
@@ -666,6 +809,7 @@ public:
 
 
 	}
+
 
 	void setRight(double value)
 	{
@@ -697,50 +841,33 @@ public:
 	void mechanismSystem()
 	{
 		cubeMechanism();
-		climbMechanism();
-	}
-
-
-
-	// Rope Mechanism
-
-	void setRopeMotors(double val) {
-		ropeTalon1.Set(ControlMode::PercentOutput,val);
-		ropeTalon2.Set(ControlMode::PercentOutput,val);
-	}
-
-	void climbArmTiltMechanism() {
-
-		if(joystickMechanisms.GetRawButton(9)) {
-			climbArmTiltSole->Set(DoubleSolenoid::kForward);
-		}
-		else if(joystickMechanisms.GetRawButton(10)) {
-			climbArmTiltSole->Set(DoubleSolenoid::kReverse);
-		}
-	}
-
-	void controlRopeMotors()
-	{
-		double mag = joystickMain.GetRawAxis(3);
-		if ( mag > 0.3 && joystickMain.GetRawButton(1))
-		{
-			setRopeMotors(mag/2);
-		}
-		else if(joystickMain.GetRawButton(1) && joystickMain.GetRawButton(4) && joystickMain.GetRawButton(9))
-		{
-			setRopeMotors(-0.15);
-		}
-		else
-		{
-			setRopeMotors(0.0);
-		}
-
-	}
-
-	void climbMechanism() {
-		climbArmTiltMechanism();
-		controlRopeMotors();
 		hookLiftMechanism();
+	}
+
+
+
+	//  Mechanism
+	void setHookMotors(double val) {
+		if ((topHookInductiveSensor && val > 0.0) || (bottomHookInductiveSensor && val < 0.0)) {
+			hookTalon1.Set(ControlMode::PercentOutput,0);
+			hookTalon2.Set(ControlMode::PercentOutput,0);
+			return;
+		}
+
+		hookTalon1.Set(ControlMode::PercentOutput,val);
+		hookTalon2.Set(ControlMode::PercentOutput,val);
+	}
+
+	void hookLiftMechanism() {
+		if(joystickMechanisms.GetRawButton(6)) {
+			setHookMotors(0.5);
+		}
+		else if(joystickMechanisms.GetRawButton(5)) {
+			setHookMotors(-0.5);
+		}
+		else {
+			setHookMotors(0.0);
+		}
 	}
 
 
@@ -760,42 +887,27 @@ public:
 		if (rawAxis1 > 0.2)
 		{
 			if(!topInductiveSensor && cubeArmTiltSole->Get() != DoubleSolenoid::kReverse) {
-				cubeLiftMotor.Set(ControlMode::PercentOutput, rawAxis1); // lift the cube up
+				cubeLiftMotor->Set(ControlMode::PercentOutput, rawAxis1); // lift the cube up
 			}
 			else {
-				cubeLiftMotor.Set(ControlMode::PercentOutput,0.0); // stop the cube lift
+				cubeLiftMotor->Set(ControlMode::PercentOutput,0.0); // stop the cube lift
 			}
 		}
 		else if (rawAxis1 < -0.2)
 		{
 			if(!bottomInductiveSensor && cubeArmTiltSole->Get() != DoubleSolenoid::kReverse) {
-				cubeLiftMotor.Set(ControlMode::PercentOutput, rawAxis1); // lower the cube down
+				cubeLiftMotor->Set(ControlMode::PercentOutput, rawAxis1); // lower the cube down
 			}
 			else {
-				cubeLiftMotor.Set(ControlMode::PercentOutput,0.0); // stop the cube lift
+				cubeLiftMotor->Set(ControlMode::PercentOutput,0.0); // stop the cube lift
 			}
 		}
 		else
 		{
-			cubeLiftMotor.Set(ControlMode::PercentOutput, 0.0);
+			cubeLiftMotor->Set(ControlMode::PercentOutput, 0.0);
 		}
 
 
-	}
-
-	void hookLiftMechanism() {
-		if (joystickMain.GetRawButton(8))//up elevator
-		{
-			elevatorTalon.Set(ControlMode::PercentOutput, 1.0);
-		}
-		else if (joystickMain.GetRawButton(6))
-		{
-			elevatorTalon.Set(ControlMode::PercentOutput, -0.5);
-		}
-		else
-		{
-			elevatorTalon.Set(ControlMode::PercentOutput, 0.0);
-		}
 	}
 
 	void pushCubeMotorsOut()
@@ -825,10 +937,6 @@ public:
 		}
 		else if(joystickMechanisms.GetRawButton(2)) { // take the cube in
 			pullCubeMotorsIn();
-		}
-		else if (joystickMechanisms.GetRawButton(6))
-		{
-			setCubeMotors(0.35);
 		}
 		else if (rawAxis3 > 0.2)
 		{
@@ -862,6 +970,11 @@ public:
 	void getInductiveSensors() {
 		topInductiveSensor = (cubeLiftInductiveTop.GetVoltage() > 3.0 ? true : false);
 		bottomInductiveSensor = (cubeLiftInductiveBottom.GetVoltage() > 3.0 ? true : false);
+
+
+		topHookInductiveSensor = (hookLiftInductiveTop.GetVoltage() > 3.0 ? true: false);
+		bottomHookInductiveSensor = (hookLiftInductiveBottom.GetVoltage() > 3.0 ? true : false);
+
 	}
 
 

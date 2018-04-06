@@ -282,7 +282,7 @@ public:
 			distance = 8498;
 		}
 
-		while (distance > -(initLeft - talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx)))
+		while (distance > -(initLeft - talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx))  && autoTimer->Get() < 15)
 		{
 			getInductiveSensors();
 			if (!topInductiveSensor) {
@@ -318,7 +318,7 @@ public:
 		setRight(rightside);
 		setLeft(leftside);
 
-		while (b*inches > (initLeft - talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx)))
+		while (b*inches > (initLeft - talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx)) && autoTimer->Get() < 15)
 		{
 			getInductiveSensors();
 			if (!bottomInductiveSensor) {
@@ -396,12 +396,32 @@ public:
 			}
 			else if(pos == 2) { // center
 				if(switchPos == 'L') { // tested!
-					goForwardInInches(21);
-					turn(-90);
-					goForwardInInches(84);
-					turn(90);
+// 					goForwardInInches(21);
+// 					turn(-90);
+// 					goForwardInInches(84);
+// 					turn(90);
+// 					forwardUltrasonic();
+// 					shootCubeOutAuto();
+					
+					
+					goForwardInInches(15);
+					turn(-45);
+					goForwardInInches(55);
+					turn(45);
 					forwardUltrasonic();
 					shootCubeOutAuto();
+
+					goBackAndBringDown(15);
+					turn(-45);
+					goBackInInches(35);
+					turn(45);
+					ultraTakeInMoveForward();
+					goBackInInches(15);
+					turn(-45);
+					goForwardAndUp(25);
+					turn(45);
+					forwardUltrasonic();
+					shootCubeOutAuto(0.5);
 				}
 				else if (switchPos == 'R') {
 //					goForwardInInches(21);
@@ -672,7 +692,7 @@ public:
 		setLeft(0.0);
 	}
 
-	void ultraTakeInMoveForward(double halfSpeed = 0.075, double dist = 15)
+	void ultraTakeInMoveForward(double halfSpeed = 0.075, double dist = 13)
 	{
 		double initDist = ultraFront->GetRangeInches();
 		int counter = 0;

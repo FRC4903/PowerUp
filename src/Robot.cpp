@@ -16,6 +16,10 @@
 #include "Preferences.h"
 #include "Joystick.h"
 #include "AnalogInput.h"
+//#include <opencv2>
+#include "CameraServer.h"
+#include "Servo.h"
+
 
 using namespace frc;
 using namespace std;
@@ -84,6 +88,10 @@ public:
 	Timer *autoTimer = new Timer();
 
 
+	Servo *rightServo;
+	Servo *leftServo;
+
+
 
 	// SETUP SECTION
 	//
@@ -95,7 +103,8 @@ public:
 			cubeIntakeTalonLeft(7),cubeIntakeTalonRight(8),
 			joystickMain(0),
 			joystickMechanisms(1),
-			cubeLiftInductiveTop(0),cubeLiftInductiveBottom(1),hookTalon1(9),hookTalon2(10),hookLiftInductiveTop(2),hookLiftInductiveBottom(3)
+			cubeLiftInductiveTop(0),cubeLiftInductiveBottom(1),hookTalon1(9),hookTalon2(10),hookLiftInductiveTop(2),hookLiftInductiveBottom(3),
+			rightServo(), leftServo()
 	{
 		cubeLiftMotor = new TalonSRX(6);
 		preferences = Preferences::GetInstance();
@@ -146,6 +155,10 @@ public:
 		setupEncoderTalon(&talonRight1);
 
 		timer->Start();
+
+		CameraServer::GetInstance()->StartAutomaticCapture();
+//		cs::UsbCamera camera = CameraServer
+
 
 	}
 
@@ -203,6 +216,9 @@ public:
 		done= false;
 
 		autoTimer->Reset();
+
+		rightServo->SetAngle(rightServo->GetAngle() + 90);
+		leftServo->SetAngle(leftServo->GetAngle() - 90);
 	}
 
 	void autoCubeDown() {
@@ -346,82 +362,110 @@ public:
 		{
 			done = true;
 			int pos = preferences->GetInt("autoPos", 0); // 1 left 2 center 3 right
-			int dropPos = preferences->GetInt("dropPos", 1); // 0 - A, 1 - B, 3 - C
+			int endGame = preferences->GetInt("endGame", 0); // 0 - Vault, 1 - Switch, 2 - farSwitch
+			char scalePos = gameData[1];
 			char switchPos = gameData[0];
 
 			setCubeArmTilt(true);
 
-			if (pos == 4 || dropPos == 4)
+			if (pos == 4)
 			{
 				goForwardInInches(140);
 			}
 
 			if(pos == 1) {
 				if(switchPos == 'L') {
-					if (dropPos == 1) { //tested
-						goForwardInInches(140);
-						turn(90);
-						forwardUltrasonic();
-						shootCubeOutAuto();
-					}
-					else if(dropPos == 0) {
-						goForwardInInches(70);
-						turn(90);
-						goForwardInInches(36);
-						turn(-90);
-						forwardUltrasonic();
-						shootCubeOutAuto();
-					}
+//					if (dropPos == 1) { //tested
+					goForwardInInches(140);
+					turn(90);
+					forwardUltrasonic(0.3, 18);
+					shootCubeOutAuto(0.4);
+//					}
+//					else if(dropPos == 0) {
+//						goForwardInInches(70);
+//						turn(90);
+//						goForwardInInches(36);
+//						turn(-90);
+//						forwardUltrasonic();
+//						shootCubeOutAuto();
+//					}
+
 				}
 				else if (switchPos == 'R') {
-					if(dropPos == 0) { //not gonna happen! use the other one
-						goForwardInInches(21);
-						turn(90);
-						goForwardInInches(160);
-						turn(-90);
-						forwardUltrasonic();
-						shootCubeOutAuto();
-					}
-					else if (dropPos == 1)
-					{
-						setCubeArmTilt(false);
-						goForwardInInches(222);
-						turn(90);
-						goForwardInInches(200);
-						turn(90);
-//						goForwardInInches(35);
-						setCubeMotors(1.0);
-					}
+
+					goForwardInInches(140);
+					goBackAndBringDown(60);
+					turn(90);
+
+
+
+//					if(dropPos == 0) { //not gonna happen! use the other one
+//						goForwardInInches(21);
+//						turn(90);
+//						goForwardInInches(160);
+//						turn(-90);
+//						forwardUltrasonic();
+//						shootCubeOutAuto();
+//					}
+//					else if (dropPos == 1)
+//					{
+
+
+
+
+//					setCubeArmTilt(false);
+//					goForwardInInches(222);
+//					turn(90);
+//					goForwardInInches(200);
+//					turn(90);
+//					forwardUltrasonic(0.2, 20);
+//					shootCubeOutAuto(1.0);
+
+
+
+
+////						goForwardInInches(35);
+//						setCubeMotors(1.0);
+//					}
 				}
 			}
 			else if(pos == 2) { // center
 				if(switchPos == 'L') { // tested!
-// 					goForwardInInches(21);
-// 					turn(-90);
-// 					goForwardInInches(84);
-// 					turn(90);
-// 					forwardUltrasonic();
-// 					shootCubeOutAuto();
-					
-					
+//					goForwardInInches(21);
+//					turn(-90);
+//					goForwardInInches(84);
+//					turn(90);
+//					forwardUltrasonic();
+//					shootCubeOutAuto();
+
 					goForwardInInches(15);
-					turn(-45);
-					goForwardInInches(55);
-					turn(45);
+					turn(-50);
+					goForwardInInches(85);
+					turn(50);
+
 					forwardUltrasonic();
+//					forwardUltrasonic(0.2, 16);
+//					double cur_time = autoTimer->Get();
+//					while (cur_time + 0.4 > autoTimer->Get())
+//					{
+//						setRight(0.10);
+//						setLeft(0.10);
+//					}
+					setRight(0.0);
+					setLeft(0.0);
 					shootCubeOutAuto();
 
 					goBackAndBringDown(15);
-					turn(-45);
-					goBackInInches(35);
-					turn(45);
+					turn(-50);
+					goBackInInches(65);
+					turn(50);
+
+//					goBackInInches(10);
 					ultraTakeInMoveForward();
-					goBackInInches(15);
-					turn(-45);
-					goForwardAndUp(25);
-					turn(45);
-					forwardUltrasonic();
-					shootCubeOutAuto(0.5);
+					turn(180);
+
+
+
 				}
 				else if (switchPos == 'R') {
 //					goForwardInInches(21);
@@ -432,22 +476,33 @@ public:
 //					shootCubeOutAuto();
 					goForwardInInches(15);
 					turn(45);
-					goForwardInInches(55);
+					goForwardInInches(73);
 					turn(-45);
 					forwardUltrasonic();
+//					double cur_time = autoTimer->Get();
+//					while (cur_time + 0.4 > autoTimer->Get())
+//					{
+//						setRight(0.10);
+//						setLeft(0.10);
+//					}
+					setRight(0.0);
+					setLeft(0.0);
 					shootCubeOutAuto();
 
 					goBackAndBringDown(15);
 					turn(45);
-					goBackInInches(35);
+					goBackInInches(60);
 					turn(-45);
+
+//					goBackInInches(10);
 					ultraTakeInMoveForward();
-					goBackInInches(15);
-					turn(45);
-					goForwardAndUp(25);
-					turn(-45);
-					forwardUltrasonic();
-					shootCubeOutAuto(0.5);
+					turn(180);
+//					goBackInInches(15);
+//					turn(45);
+//					goForwardAndUp(25);
+//					turn(-45);
+//					forwardUltrasonic();
+//					shootCubeOutAuto(0.5);
 				}
 			}
 			else if(pos == 3) { // right
@@ -458,82 +513,137 @@ public:
 //					turn(90);
 //					forwardUltrasonic();
 //					shootCubeOutAuto();
-					if(dropPos == 0) {
-						goForwardInInches(197);
-						turn(-90);
-						goForwardInInches(223);
-						turn(-90);
-						goForwardInInches(60);
-						turn(-90);
-						forwardUltrasonic();
-						shootCubeOutAuto();
-					}
-					else if (dropPos == 1)
-					{
-						setCubeArmTilt(false);
-						goForwardInInches(236-28/2);
-						turn(-90);
-						goForwardInInches(200);
-						turn(-90);
-//						goForwardInInches(35);
-						setCubeMotors(1.0);
-					}
+//					if(dropPos == 0) {
+//						goForwardInInches(197);
+//						turn(-90);
+//						goForwardInInches(223);
+//						turn(-90);
+//						goForwardInInches(60);
+//						turn(-90);
+//						forwardUltrasonic();
+//						shootCubeOutAuto();
+//					}
+//					else if (dropPos == 1)
+//					{
+//						setCubeArmTilt(false);
+//						goForwardInInches(236-28/2);
+//						turn(-90);
+//						goForwardInInches(200);
+//						turn(-90);
+////						goForwardInInches(35);
+//						setCubeMotors(1.0);
+//					setCubeArmTilt(false);
+//					goForwardInInches(222);
+//					turn(-90);
+//					goForwardInInches(200);
+//					turn(-90);
+//					forwardUltrasonic(0.2, 20);
+//					shootCubeOutAuto(1.0);
+
+					goForwardInInches(140);
+					goBackAndBringDown(60);
+					turn(-90);
+
+
+//					}
 				}
 				else if (switchPos == 'R') {
-					if(dropPos == 1) { // right side
-						goForwardInInches(140);
-						turn(-90);
-						forwardUltrasonic();
-						shootCubeOutAuto();
-					}
-					else if(dropPos == 0) { // middle
-						goForwardInInches(70);
-						turn(-90);
-						goForwardInInches(28);
-						turn(90);
-						forwardUltrasonic();
-						shootCubeOutAuto();
-
-
+//					if(dropPos == 1) { // right side
+					goForwardInInches(140);
+					turn(-90);
+					forwardUltrasonic(0.3, 18);
+					shootCubeOutAuto(0.4);
+//					}
+//					else if(dropPos == 0) { // middle
+//						goForwardInInches(70);
+//						turn(-90);
+//						goForwardInInches(28);
+//						turn(90);
+//						forwardUltrasonic();
+//						shootCubeOutAuto();
+//
+//
 //						goBackInInches(5);
 //						turn(-75);
 //						autoCubeDown();
 //						ultraTakeInMoveForward();
 //						setCubeMotors(-0.8);
 //						forwardUltrasonic(0.075, 6);
-
+//
 //						setCubeMotors(0.0);
-////						autoCubeIn();
+//						autoCubeIn();
 //						autoCubeUp();
-
+//
 //						goBackInInches(5);
 //						turn(75);
 //						shootCubeOutAuto(0.8);
-					}
+//					}
 				}
 			}
-			else if(pos == 5) { // left 2
-				if(switchPos == 'L') {
-					goForwardInInches(140);
-					turn(90);
-					forwardUltrasonic();
-					shootCubeOutAuto();
-				}
-				else if (switchPos == 'R') {
-					goForwardInInches(140);
-				}
-			}
-			else if(pos == 6) { // right 2
-				if(switchPos == 'L') { // tested!
-					goForwardInInches(140);
-				}
-				else if (switchPos == 'R') {
-					goForwardInInches(140);
-					turn(-90);
-					forwardUltrasonic();
-					shootCubeOutAuto();
-				}
-			}
+//			else if(pos == 5) { // left 2
+//				if(switchPos == 'L') {
+//					goForwardInInches(140);
+//					turn(90);
+//					forwardUltrasonic(0.3, 18);
+//					double cur_time = autoTimer->Get();
+//					while (cur_time + 0.4 > autoTimer->Get())
+//					{
+//						setRight(0.10);
+//						setLeft(0.10);
+//					}
+//					setRight(0.0);
+//					setLeft(0.0);
+//					shootCubeOutAuto(0.4);
+//					goBackInInches(15);
+////					turn(90);
+//				}
+//				else if (switchPos == 'R') {
+//					goForwardInInches(140);
+//					goBackAndBringDown(60);
+//					turn(90);
+//				}
+//			}
+//			else if(pos == 6) { // right 2
+//				if(switchPos == 'L') { // tested!
+//					goForwardInInches(140);
+////					double now_time = autoTimer->Get();
+////					while (autoTimer->Get())
+//					goBackAndBringDown(60);
+//					turn(-90);
+//
+//				}
+//				else if (switchPos == 'R') {
+//					goForwardInInches(140);
+//					turn(-90);
+//					forwardUltrasonic(0.3, 18);
+//					double cur_time = autoTimer->Get();
+//					while (cur_time + 0.4 > autoTimer->Get())
+//					{
+//						setRight(0.10);
+//						setLeft(0.10);
+//					}
+//					setRight(0.0);
+//					setLeft(0.0);
+//					shootCubeOutAuto(0.4);
+//					goBackInInches(15);
+//				}
+//			}
+//
+//			else if (pos == 7) // left scale
+//			{
+//				if (scalePos == 'L')
+//				{
+//					goForwardInInches(250);
+//					turn(90);
+//					getInductiveSensors();
+//					while (!topHookInductiveSensor)
+//					{
+//						getInductiveSensors();
+//						setHookMotors(0.3);
+//					}
+//					setHookMotors(0.0);
+//				}
+//			}
 
 			setRight(0.0);
 			setLeft(0.0);
@@ -541,7 +651,7 @@ public:
 		}
 	}
 
-	void shootCubeOutAuto(double speed=0.2) {
+	void shootCubeOutAuto(double speed=0.4) {
 		setCubeMotors(speed);
 		double start = timer->Get();
 		while(timer->Get() - start < 1 && autoTimer->Get() < 15) {
@@ -625,11 +735,15 @@ public:
 		}
 		else if (inches > 196 && inches < 201)
 		{
-			distance = 6756;
+			distance = 6100;
 		}
 		else if (inches > 219 && inches < 225)
 		{
-			distance = 8498;
+			distance = 7450;
+		}
+		else if (inches > 249 && inches < 251)
+		{
+			distance = 7800;
 		}
 
 		while (distance > -(initLeft - talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx)) && autoTimer->Get() < 15)
@@ -692,7 +806,7 @@ public:
 		setLeft(0.0);
 	}
 
-	void ultraTakeInMoveForward(double halfSpeed = 0.075, double dist = 13)
+	void ultraTakeInMoveForward(double halfSpeed = 0.1, double dist = 12)
 	{
 		double initDist = ultraFront->GetRangeInches();
 		int counter = 0;
@@ -752,6 +866,7 @@ public:
 
 
 
+
 	// TELEOP SECTION
 	//
 	//
@@ -782,12 +897,31 @@ public:
 		driveSystem();      //uncomment to drive
 		mechanismSystem(); //uncomment to drive
 
+//		if(joystickMechanisms.GetRawButton(1)) {
+//				talonLeft1.Set(ControlMode::PercentOutput,0.2);
+//				talonLeft2.Set(ControlMode::PercentOutput,0.0);
+//			}
+//			else if(joystickMechanisms.GetRawButton(2)) {
+//				talonLeft1.Set(ControlMode::PercentOutput,0.0);
+//				talonLeft2.Set(ControlMode::PercentOutput,0.2);
+//			}
+//			else {
+//				talonLeft1.Set(ControlMode::PercentOutput,0.0);
+//				talonLeft2.Set(ControlMode::PercentOutput,0.0);
+//			}
+
 //		driveSystemCoastMode(false);
 
 //		double amount = preferences->GetDouble("forwardAmount");
 //
 //		if(joystickMain.GetRawButton(1)) {
 //			goForwardInInches(6600);
+//		}
+
+//		if (joystickMain.GetRawButton(8))
+//		{
+//			autoTimer->Reset();
+//			forwardUltrasonic();
 //		}
 	}
 
@@ -803,15 +937,25 @@ public:
 	void driveSystem()
 	{
 
-		if (joystickMain.GetRawButton(2)) // if green a button is pressed
+		if (joystickMain.GetRawButton(1)) // if green a button is pressed
 			moderator =1.0; // makes robot go faster .. 1.0 for carpet
-		else if (joystickMain.GetRawButton(3)) // if red b button is pressed
+		else if (joystickMain.GetRawButton(2)) // if red b button is pressed
 			moderator = 0.3; // make it really slow
 		else // base case let it be half speed
 			moderator = 0.85; // limits the range given from the controller // 0.85 for carpet
 
 		j_x = joystickMain.GetRawAxis(1) * moderator;
 		j_y = joystickMain.GetRawAxis(0) * moderator;
+
+		if((j_x < 0 && j_x >= -0.05) || (j_x > 0 && j_x <= 0.05)) {
+			j_x = 0;
+		}
+
+		if((j_y < 0 && j_y >= -0.05) || (j_y > 0 && j_y <= 0.05)) {
+			j_y = 0;
+		}
+
+
 
 
 		reverseDrive = joystickMain.GetRawButton(5);
@@ -820,8 +964,8 @@ public:
 		double speedR = -j_y - j_x;
 
 		if (reverseDrive) {
-			speedL = -speedL;
-			speedR = -speedR;
+			speedL = -j_y + j_x;
+			speedR = +j_y + j_x;
 		}
 
 		setLeft(speedL);
@@ -885,6 +1029,9 @@ public:
 		else if(joystickMechanisms.GetRawButton(5)) {
 			setHookMotors(-0.5);
 		}
+		else if(joystickMechanisms.GetRawButton(1)) {
+			setHookMotors(-0.25);
+		}
 		else {
 			setHookMotors(0.0);
 		}
@@ -907,7 +1054,7 @@ public:
 		if (rawAxis1 > 0.2)
 		{
 			if(!topInductiveSensor && cubeArmTiltSole->Get() != DoubleSolenoid::kReverse) {
-				cubeLiftMotor->Set(ControlMode::PercentOutput, rawAxis1); // lift the cube up
+				cubeLiftMotor->Set(ControlMode::PercentOutput, 1.0); // lift the cube up
 			}
 			else {
 				cubeLiftMotor->Set(ControlMode::PercentOutput,0.0); // stop the cube lift
@@ -916,7 +1063,7 @@ public:
 		else if (rawAxis1 < -0.2)
 		{
 			if(!bottomInductiveSensor && cubeArmTiltSole->Get() != DoubleSolenoid::kReverse) {
-				cubeLiftMotor->Set(ControlMode::PercentOutput, rawAxis1); // lower the cube down
+				cubeLiftMotor->Set(ControlMode::PercentOutput, -1.0); // lower the cube down
 			}
 			else {
 				cubeLiftMotor->Set(ControlMode::PercentOutput,0.0); // stop the cube lift
@@ -1002,6 +1149,9 @@ public:
 	void DisabledInit() {
 		setRight(0.0);
 		setLeft(0.0);
+
+		rightServo->SetAngle(rightServo->GetAngle() - 90);
+		leftServo->SetAngle(leftServo->GetAngle() + 90);
 	}
 
 };

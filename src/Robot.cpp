@@ -356,6 +356,40 @@ public:
 		autoCubeDown();
 	}
 
+	void goBackAndBringUp(double inches, double speed=0.4)
+		{
+			const double encoderConst = 35.34; // Ratio adjustment from encoder ticks to inches
+			const double a = 0.023944549;
+			const double b = 35.24782609;
+			double initRight = talonRight1.GetSelectedSensorPosition(kPIDLoopIdx);
+			double initLeft  = talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx);
+			double rightside = -speed;
+			double leftside  = -speed;
+			setRight(rightside);
+			setLeft(leftside);
+
+			while (b*inches > (initLeft - talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx)) && autoTimer->Get() < 15)
+			{
+				getInductiveSensors();
+				if (!topInductiveSensor) {
+					cubeLiftMotor->Set(ControlMode::PercentOutput,1.0);
+				}
+				else
+				{
+					cubeLiftMotor->Set(ControlMode::PercentOutput,0.0);
+				}
+				//0.2 before
+				rightside = -speed;
+				leftside = -speed;
+				double coeff = 0.004;
+				setRight(rightside);
+				setLeft(leftside);
+			}
+			setRight(0.0);
+			setLeft(0.0);
+			autoCubeUp();
+		}
+
 
 	void AutonomousPeriodic() {
 		if(gameData.length() > 0 && !done)
@@ -363,8 +397,10 @@ public:
 			done = true;
 			int pos = preferences->GetInt("autoPos", 0); // 1 left 2 center 3 right
 			int endGame = preferences->GetInt("endGame", 0); // 0 - Vault, 1 - Switch, 2 - farSwitch
-			char scalePos = gameData[1];
+
 			char switchPos = gameData[0];
+			char scalePos = gameData[1];
+			char farSwitch = gameData[2];
 
 			setCubeArmTilt(true);
 
@@ -373,84 +409,33 @@ public:
 				goForwardInInches(140);
 			}
 
-			if(pos == 1) {
+			if(pos == 1) { // left
 				if(switchPos == 'L') {
-//					if (dropPos == 1) { //tested
 					goForwardInInches(140);
 					turn(90);
 					forwardUltrasonic(0.3, 18);
-					shootCubeOutAuto(0.4);
-//					}
-//					else if(dropPos == 0) {
-//						goForwardInInches(70);
-//						turn(90);
-//						goForwardInInches(36);
-//						turn(-90);
-//						forwardUltrasonic();
-//						shootCubeOutAuto();
-//					}
+					shootCubeOutAuto(0.3);
 
+					goBackInInches(15);
+					autoCubeDown();
 				}
 				else if (switchPos == 'R') {
-
 					goForwardInInches(140);
-					goBackAndBringDown(60);
-					turn(90);
 
-
-
-//					if(dropPos == 0) { //not gonna happen! use the other one
-//						goForwardInInches(21);
-//						turn(90);
-//						goForwardInInches(160);
-//						turn(-90);
-//						forwardUltrasonic();
-//						shootCubeOutAuto();
-//					}
-//					else if (dropPos == 1)
-//					{
-
-
-
-
-//					setCubeArmTilt(false);
-//					goForwardInInches(222);
-//					turn(90);
-//					goForwardInInches(200);
-//					turn(90);
-//					forwardUltrasonic(0.2, 20);
-//					shootCubeOutAuto(1.0);
-
-
-
-
-////						goForwardInInches(35);
-//						setCubeMotors(1.0);
-//					}
+					if (endGame == 0) {
+						goBackAndBringDown(60);
+						turn(90);
+					}
 				}
 			}
 			else if(pos == 2) { // center
 				if(switchPos == 'L') { // tested!
-//					goForwardInInches(21);
-//					turn(-90);
-//					goForwardInInches(84);
-//					turn(90);
-//					forwardUltrasonic();
-//					shootCubeOutAuto();
-
 					goForwardInInches(15);
 					turn(-50);
 					goForwardInInches(85);
 					turn(50);
 
 					forwardUltrasonic();
-//					forwardUltrasonic(0.2, 16);
-//					double cur_time = autoTimer->Get();
-//					while (cur_time + 0.4 > autoTimer->Get())
-//					{
-//						setRight(0.10);
-//						setLeft(0.10);
-//					}
 					setRight(0.0);
 					setLeft(0.0);
 					shootCubeOutAuto();
@@ -460,31 +445,33 @@ public:
 					goBackInInches(65);
 					turn(50);
 
-//					goBackInInches(10);
 					ultraTakeInMoveForward();
-					turn(180);
 
-
+					if (endGame == 0) {
+						turn(180);
+					}
+					else if (endGame == 1) {
+						goBackAndBringUp(15);
+						turn(-45);
+					}
+					else if (endGame == 2) {
+						goBackAndBringUp(15);
+						if(farSwitch == 'L') {
+							turn(-90);
+						}
+						else {
+							turn(90);
+						}
+					}
 
 				}
 				else if (switchPos == 'R') {
-//					goForwardInInches(21);
-//					turn(90);
-//					goForwardInInches(36);
-//					turn(-90);
-//					forwardUltrasonic();
-//					shootCubeOutAuto();
 					goForwardInInches(15);
 					turn(45);
 					goForwardInInches(73);
 					turn(-45);
 					forwardUltrasonic();
-//					double cur_time = autoTimer->Get();
-//					while (cur_time + 0.4 > autoTimer->Get())
-//					{
-//						setRight(0.10);
-//						setLeft(0.10);
-//					}
+
 					setRight(0.0);
 					setLeft(0.0);
 					shootCubeOutAuto();
@@ -494,156 +481,46 @@ public:
 					goBackInInches(60);
 					turn(-45);
 
-//					goBackInInches(10);
 					ultraTakeInMoveForward();
-					turn(180);
-//					goBackInInches(15);
-//					turn(45);
-//					goForwardAndUp(25);
-//					turn(-45);
-//					forwardUltrasonic();
-//					shootCubeOutAuto(0.5);
+
+					if (endGame == 0) {
+						turn(180);
+					}
+					else if (endGame == 1) {
+						goBackAndBringUp(15);
+						turn(45);
+					}
+					else if (endGame == 2) {
+						goBackAndBringUp(15);
+						if(farSwitch == 'L') {
+							turn(-90);
+						}
+						else {
+							turn(90);
+						}
+					}
+
 				}
 			}
 			else if(pos == 3) { // right
 				if(switchPos == 'L') {
-//					goForwardInInches(49-28);
-//					turn(-90);
-//					goForwardInInches(160);
-//					turn(90);
-//					forwardUltrasonic();
-//					shootCubeOutAuto();
-//					if(dropPos == 0) {
-//						goForwardInInches(197);
-//						turn(-90);
-//						goForwardInInches(223);
-//						turn(-90);
-//						goForwardInInches(60);
-//						turn(-90);
-//						forwardUltrasonic();
-//						shootCubeOutAuto();
-//					}
-//					else if (dropPos == 1)
-//					{
-//						setCubeArmTilt(false);
-//						goForwardInInches(236-28/2);
-//						turn(-90);
-//						goForwardInInches(200);
-//						turn(-90);
-////						goForwardInInches(35);
-//						setCubeMotors(1.0);
-//					setCubeArmTilt(false);
-//					goForwardInInches(222);
-//					turn(-90);
-//					goForwardInInches(200);
-//					turn(-90);
-//					forwardUltrasonic(0.2, 20);
-//					shootCubeOutAuto(1.0);
-
 					goForwardInInches(140);
-					goBackAndBringDown(60);
-					turn(-90);
 
-
-//					}
+					if (endGame == 0) {
+						goBackAndBringDown(60);
+						turn(-90);
+					}
 				}
 				else if (switchPos == 'R') {
-//					if(dropPos == 1) { // right side
 					goForwardInInches(140);
 					turn(-90);
 					forwardUltrasonic(0.3, 18);
-					shootCubeOutAuto(0.4);
-//					}
-//					else if(dropPos == 0) { // middle
-//						goForwardInInches(70);
-//						turn(-90);
-//						goForwardInInches(28);
-//						turn(90);
-//						forwardUltrasonic();
-//						shootCubeOutAuto();
-//
-//
-//						goBackInInches(5);
-//						turn(-75);
-//						autoCubeDown();
-//						ultraTakeInMoveForward();
-//						setCubeMotors(-0.8);
-//						forwardUltrasonic(0.075, 6);
-//
-//						setCubeMotors(0.0);
-//						autoCubeIn();
-//						autoCubeUp();
-//
-//						goBackInInches(5);
-//						turn(75);
-//						shootCubeOutAuto(0.8);
-//					}
+					shootCubeOutAuto(0.3);
+
+					goBackInInches(15);
+					autoCubeDown();
 				}
 			}
-//			else if(pos == 5) { // left 2
-//				if(switchPos == 'L') {
-//					goForwardInInches(140);
-//					turn(90);
-//					forwardUltrasonic(0.3, 18);
-//					double cur_time = autoTimer->Get();
-//					while (cur_time + 0.4 > autoTimer->Get())
-//					{
-//						setRight(0.10);
-//						setLeft(0.10);
-//					}
-//					setRight(0.0);
-//					setLeft(0.0);
-//					shootCubeOutAuto(0.4);
-//					goBackInInches(15);
-////					turn(90);
-//				}
-//				else if (switchPos == 'R') {
-//					goForwardInInches(140);
-//					goBackAndBringDown(60);
-//					turn(90);
-//				}
-//			}
-//			else if(pos == 6) { // right 2
-//				if(switchPos == 'L') { // tested!
-//					goForwardInInches(140);
-////					double now_time = autoTimer->Get();
-////					while (autoTimer->Get())
-//					goBackAndBringDown(60);
-//					turn(-90);
-//
-//				}
-//				else if (switchPos == 'R') {
-//					goForwardInInches(140);
-//					turn(-90);
-//					forwardUltrasonic(0.3, 18);
-//					double cur_time = autoTimer->Get();
-//					while (cur_time + 0.4 > autoTimer->Get())
-//					{
-//						setRight(0.10);
-//						setLeft(0.10);
-//					}
-//					setRight(0.0);
-//					setLeft(0.0);
-//					shootCubeOutAuto(0.4);
-//					goBackInInches(15);
-//				}
-//			}
-//
-//			else if (pos == 7) // left scale
-//			{
-//				if (scalePos == 'L')
-//				{
-//					goForwardInInches(250);
-//					turn(90);
-//					getInductiveSensors();
-//					while (!topHookInductiveSensor)
-//					{
-//						getInductiveSensors();
-//						setHookMotors(0.3);
-//					}
-//					setHookMotors(0.0);
-//				}
-//			}
 
 			setRight(0.0);
 			setLeft(0.0);

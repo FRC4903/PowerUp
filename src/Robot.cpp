@@ -18,7 +18,9 @@
 #include "AnalogInput.h"
 //#include <opencv2>
 #include "CameraServer.h"
-#include "Servo.h"
+//#include "Servo.h"
+
+#include <iostream>
 
 
 using namespace frc;
@@ -55,6 +57,7 @@ public:
 
 	TalonSRX cubeIntakeTalonLeft, cubeIntakeTalonRight;
 	DoubleSolenoid *cubeArmTiltSole = new DoubleSolenoid(6 ,1);
+//	DoubleSolenoid *scaleTiltSole = new DoubleSolenoid(0, 7);
 
 	bool topInductiveSensor, bottomInductiveSensor;
 	bool topHookInductiveSensor, bottomHookInductiveSensor;
@@ -88,8 +91,8 @@ public:
 	Timer *autoTimer = new Timer();
 
 
-	Servo *rightServo;
-	Servo *leftServo;
+//	Servo *rightServo = new Servo(2);
+//	Servo *leftServo = new Servo(3);
 
 
 
@@ -103,9 +106,10 @@ public:
 			cubeIntakeTalonLeft(7),cubeIntakeTalonRight(8),
 			joystickMain(0),
 			joystickMechanisms(1),
-			cubeLiftInductiveTop(0),cubeLiftInductiveBottom(1),hookTalon1(9),hookTalon2(10),hookLiftInductiveTop(2),hookLiftInductiveBottom(3),
-			rightServo(), leftServo()
+			cubeLiftInductiveTop(0),cubeLiftInductiveBottom(1),hookTalon1(9),hookTalon2(10),hookLiftInductiveTop(2),hookLiftInductiveBottom(3)
 	{
+//		rightServo = new Servo(2);
+//		leftServo = new Servo(3);
 		cubeLiftMotor = new TalonSRX(6);
 		preferences = Preferences::GetInstance();
 //		driverStation = DriverStation::GetInstance();
@@ -120,7 +124,7 @@ public:
 	}
 
 	void RobotInit() {
-
+//		dropScale();
 		ultraFront = new Ultrasonic(5, 4);
 		ultraFront->SetAutomaticMode(true);
 		talonRight1.SetInverted(true);
@@ -161,6 +165,17 @@ public:
 
 
 	}
+
+
+//	void dropScale()
+//	{
+//		scaleTiltSole->Set(DoubleSolenoid::kForward);
+//	}
+
+//	void scoopScale()
+//	{
+//		scaleTiltSole->Set(DoubleSolenoid::kReverse);
+//	}
 
 	void setupEncoderTalon(TalonSRX* talon) {
 		int absPos = talon->GetSelectedSensorPosition(0) & 0xFFF;
@@ -216,10 +231,22 @@ public:
 		done= false;
 
 		autoTimer->Reset();
-
-		rightServo->SetAngle(rightServo->GetAngle() + 90);
-		leftServo->SetAngle(leftServo->GetAngle() - 90);
+//		dropScale();
+//		servosOut();
 	}
+
+
+//	void servosOut()
+//	{
+//		rightServo->Set(0.1);
+//		leftServo->Set(0.5);
+//	}
+
+//	void servosIn()
+//	{
+//		rightServo->Set(0.5);
+//		leftServo->Set(0.1);
+//	}
 
 	void autoCubeDown() {
 
@@ -353,50 +380,47 @@ public:
 		}
 		setRight(0.0);
 		setLeft(0.0);
-		autoCubeDown();
 	}
 
 	void goBackAndBringUp(double inches, double speed=0.4)
+	{
+		const double encoderConst = 35.34; // Ratio adjustment from encoder ticks to inches
+		const double a = 0.023944549;
+		const double b = 35.24782609;
+		double initRight = talonRight1.GetSelectedSensorPosition(kPIDLoopIdx);
+		double initLeft  = talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx);
+		double rightside = -speed;
+		double leftside  = -speed;
+		setRight(rightside);
+		setLeft(leftside);
+
+		while (b*inches > (initLeft - talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx)) && autoTimer->Get() < 15)
 		{
-			const double encoderConst = 35.34; // Ratio adjustment from encoder ticks to inches
-			const double a = 0.023944549;
-			const double b = 35.24782609;
-			double initRight = talonRight1.GetSelectedSensorPosition(kPIDLoopIdx);
-			double initLeft  = talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx);
-			double rightside = -speed;
-			double leftside  = -speed;
+			getInductiveSensors();
+			if (!topInductiveSensor) {
+				cubeLiftMotor->Set(ControlMode::PercentOutput,1.0);
+			}
+			else
+			{
+				cubeLiftMotor->Set(ControlMode::PercentOutput,0.0);
+			}
+			//0.2 before
+			rightside = -speed;
+			leftside = -speed;
+			double coeff = 0.004;
 			setRight(rightside);
 			setLeft(leftside);
-
-			while (b*inches > (initLeft - talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx)) && autoTimer->Get() < 15)
-			{
-				getInductiveSensors();
-				if (!topInductiveSensor) {
-					cubeLiftMotor->Set(ControlMode::PercentOutput,1.0);
-				}
-				else
-				{
-					cubeLiftMotor->Set(ControlMode::PercentOutput,0.0);
-				}
-				//0.2 before
-				rightside = -speed;
-				leftside = -speed;
-				double coeff = 0.004;
-				setRight(rightside);
-				setLeft(leftside);
-			}
-			setRight(0.0);
-			setLeft(0.0);
-			autoCubeUp();
 		}
-
+		setRight(0.0);
+		setLeft(0.0);
+	}
 
 	void AutonomousPeriodic() {
 		if(gameData.length() > 0 && !done)
 		{
 			done = true;
 			int pos = preferences->GetInt("autoPos", 0); // 1 left 2 center 3 right
-			int endGame = preferences->GetInt("endGame", 0); // 0 - Vault, 1 - Switch, 2 - farSwitch
+			int endGame = preferences->GetInt("endGame", 0); // 0 - Vault, 1 - Switch, 2 - farSwitch, 3 - scale
 
 			char switchPos = gameData[0];
 			char scalePos = gameData[1];
@@ -415,8 +439,7 @@ public:
 					turn(90);
 					forwardUltrasonic(0.3, 18);
 					shootCubeOutAuto(0.3);
-
-					goBackInInches(15);
+					goBackAndBringDown(15);
 					autoCubeDown();
 				}
 				else if (switchPos == 'R') {
@@ -424,16 +447,17 @@ public:
 
 					if (endGame == 0) {
 						goBackAndBringDown(60);
-						turn(90);
+						turnAndBringDown(90);
+						autoCubeDown();
 					}
 				}
 			}
-			else if(pos == 2) { // center
-				if(switchPos == 'L') { // tested!
+			else if (pos == 2) { // center
+				if (switchPos == 'L') { // tested!
 					goForwardInInches(15);
 					turn(-50);
 					goForwardInInches(85);
-					turn(50);
+					turn(47);
 
 					forwardUltrasonic();
 					setRight(0.0);
@@ -441,29 +465,33 @@ public:
 					shootCubeOutAuto();
 
 					goBackAndBringDown(15);
-					turn(-50);
-					goBackInInches(65);
-					turn(50);
+					turnAndBringDown(-50);
+					goBackAndBringDown(65);
+					turnAndBringDown(50);
+					autoCubeDown();
 
 					ultraTakeInMoveForward();
 
 					if (endGame == 0) {
-						turn(180);
+						turn(-150);
 					}
 					else if (endGame == 1) {
 						goBackAndBringUp(15);
-						turn(-45);
+						turnAndBringUp(-45);
+						goForwardAndBringUp(50);
+						autoCubeUp();
 					}
 					else if (endGame == 2) {
 						goBackAndBringUp(15);
 						if(farSwitch == 'L') {
-							turn(-90);
+							turnAndBringUp(-90);
+							autoCubeUp();
 						}
 						else {
-							turn(90);
+							turnAndBringUp(90);
+							autoCubeUp();
 						}
 					}
-
 				}
 				else if (switchPos == 'R') {
 					goForwardInInches(15);
@@ -477,29 +505,33 @@ public:
 					shootCubeOutAuto();
 
 					goBackAndBringDown(15);
-					turn(45);
-					goBackInInches(60);
-					turn(-45);
+					turnAndBringDown(45);
+					goBackAndBringDown(60);
+					turnAndBringDown(-45);
+					autoCubeDown();
 
 					ultraTakeInMoveForward();
 
 					if (endGame == 0) {
-						turn(180);
+						turn(-150);
 					}
 					else if (endGame == 1) {
 						goBackAndBringUp(15);
-						turn(45);
+						turnAndBringUp(45);
+						goForwardAndBringUp(50);
+						autoCubeUp();
 					}
 					else if (endGame == 2) {
-						goBackAndBringUp(15);
+						goBackAn dBringUp(15);
 						if(farSwitch == 'L') {
-							turn(-90);
+							turnAndBringUp(-90);
+							autoCubeUp();
 						}
 						else {
-							turn(90);
+							turnAndBringUp(90);
+							autoCubeUp();
 						}
 					}
-
 				}
 			}
 			else if(pos == 3) { // right
@@ -508,7 +540,8 @@ public:
 
 					if (endGame == 0) {
 						goBackAndBringDown(60);
-						turn(-90);
+						turnAndBringDown(-90);
+						autoCubeDown();
 					}
 				}
 				else if (switchPos == 'R') {
@@ -517,8 +550,17 @@ public:
 					forwardUltrasonic(0.3, 18);
 					shootCubeOutAuto(0.3);
 
-					goBackInInches(15);
+					goBackAndBringDown(15);
 					autoCubeDown();
+				}
+			}
+
+			if (pos == 5)
+			{
+				if (scalePos == 'L')
+				{
+					goForwardInInches(250);
+					turn(90);
 				}
 			}
 
@@ -622,6 +664,10 @@ public:
 		{
 			distance = 7800;
 		}
+		else if (inches > 269 && inches < 271)
+		{
+			distance = 7800;
+		}
 
 		while (distance > -(initLeft - talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx)) && autoTimer->Get() < 15)
 		{
@@ -635,6 +681,88 @@ public:
 		setRight(0.0);
 		setLeft(0.0);
 	}
+
+	void goForwardAndBringUp(int inchesInt, double speed = 0.5)
+	{
+		double inches = double(inchesInt);
+		const double encoderConst = 35.34; // Ratio adjustment from encoder ticks to inches
+
+//		const double a = 0.023944549;
+//		const double b = 35.24782609/2.0;
+
+//		const double a = 0.9467455621;
+//		const double b = -2.840236686;
+//		const double c = 42.130177514;
+
+
+		double initRight = talonRight1.GetSelectedSensorPosition(kPIDLoopIdx);
+		double initLeft  = talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx);
+		double rightside = speed;
+		double leftside  = speed;
+		setRight(rightside);
+		setLeft(leftside);
+//		(inches*inches * a) + b*inches + c
+		const double a = 31.66666666666;
+		double b = -265.0;
+
+		if(inches >= 200)
+		{
+			b = 200.0;
+		}
+		else if(inches >= 100) {
+			 b = 0.0;
+		}
+
+
+		double distance = inches*a + b;
+
+		if (inches > 137 && inches < 143)
+		{
+			distance = 4450;
+		}
+		else if (inches > 69 && inches < 71)
+		{
+			distance = 2000;
+		}
+		else if (inches > 196 && inches < 201)
+		{
+			distance = 6100;
+		}
+		else if (inches > 219 && inches < 225)
+		{
+			distance = 7450;
+		}
+		else if (inches > 249 && inches < 251)
+		{
+			distance = 7800;
+		}
+		else if (inches > 269 && inches < 271)
+		{
+			distance = 7800;
+		}
+
+		while (distance > -(initLeft - talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx)) && autoTimer->Get() < 15)
+		{
+			getInductiveSensors();
+			if (!topInductiveSensor) {
+				cubeLiftMotor->Set(ControlMode::PercentOutput,1.0);
+			}
+			else
+			{
+				cubeLiftMotor->Set(ControlMode::PercentOutput,0.0);
+			}
+
+			//0.2 before
+			rightside = speed;
+			leftside = speed;
+			double coeff = 0.004;
+			setRight(rightside);
+			setLeft(leftside);
+		}
+		setRight(0.0);
+		setLeft(0.0);
+	}
+
 
 	void goBackInInches(double inches, double speed = 0.4)
 		{
@@ -683,13 +811,13 @@ public:
 		setLeft(0.0);
 	}
 
-	void ultraTakeInMoveForward(double halfSpeed = 0.1, double dist = 12)
+	void ultraTakeInMoveForward(double halfSpeed = 0.125, double dist = 10)
 	{
 		double initDist = ultraFront->GetRangeInches();
 		int counter = 0;
 		while (ultraFront->GetRangeInches() > dist && autoTimer->Get() < 15)
 		{
-			setCubeMotors(-0.6);
+			setCubeMotors(-1.00);
 			if (counter < 20)
 			{
 				initDist = initDist * counter + ultraFront->GetRangeInches();
@@ -736,6 +864,89 @@ public:
 			stopDriveMotors();
 		}
 
+	void turnAndBringUp(int angleInt,double initial=0.6)
+	{
+		double angle = double(angleInt);
+		gyro.Reset();
+		if (angle > 0)
+		{
+			while (gyro.GetAngle() < angle && autoTimer->Get() < 15)
+			{
+				getInductiveSensors();
+				if (!topInductiveSensor) {
+					cubeLiftMotor->Set(ControlMode::PercentOutput,1.0);
+				}
+				else
+				{
+					cubeLiftMotor->Set(ControlMode::PercentOutput,0.0);
+				}
+				double speed = initial + initial * (1 -  gyro.GetAngle() / angle)/2;
+				setRight(-speed);
+				setLeft(speed);
+			}
+		}
+		else if (angle < 0)
+		{
+			while (gyro.GetAngle() > angle && autoTimer->Get() < 15)
+			{
+				getInductiveSensors();
+				if (!topInductiveSensor) {
+					cubeLiftMotor->Set(ControlMode::PercentOutput,1.0);
+				}
+				else
+				{
+					cubeLiftMotor->Set(ControlMode::PercentOutput,0.0);
+				}
+				double speed = initial + initial * (1 - abs(gyro.GetAngle() / angle))/2;
+				setRight(speed);
+				setLeft(-speed);
+			}
+		}
+		stopDriveMotors();
+	}
+
+
+	void turnAndBringDown(int angleInt,double initial=0.6)
+	{
+		double angle = double(angleInt);
+		gyro.Reset();
+		if (angle > 0)
+		{
+			while (gyro.GetAngle() < angle && autoTimer->Get() < 15)
+			{
+				getInductiveSensors();
+				if (!bottomInductiveSensor) {
+					cubeLiftMotor->Set(ControlMode::PercentOutput,-1.0);
+				}
+				else
+				{
+					cubeLiftMotor->Set(ControlMode::PercentOutput,0.0);
+				}
+				double speed = initial + initial * (1 -  gyro.GetAngle() / angle)/2;
+				setRight(-speed);
+				setLeft(speed);
+			}
+		}
+		else if (angle < 0)
+		{
+			while (gyro.GetAngle() > angle && autoTimer->Get() < 15)
+			{
+				getInductiveSensors();
+				if (!bottomInductiveSensor) {
+					cubeLiftMotor->Set(ControlMode::PercentOutput,-1.0);
+				}
+				else
+				{
+					cubeLiftMotor->Set(ControlMode::PercentOutput,0.0);
+				}
+				double speed = initial + initial * (1 - abs(gyro.GetAngle() / angle))/2;
+				setRight(speed);
+				setLeft(-speed);
+			}
+		}
+		stopDriveMotors();
+	}
+
 
 
 
@@ -766,6 +977,7 @@ public:
 		reverseDrive = false;
 
 		lefty  = talonLeft2.GetSelectedSensorPosition(kPIDLoopIdx);
+//		dropScale();
 
 	}
 
@@ -773,6 +985,11 @@ public:
 		getInductiveSensors();      //uncomment to drive
 		driveSystem();      //uncomment to drive
 		mechanismSystem(); //uncomment to drive
+
+		cout << (ultraFront->GetRangeInches() < 10 ? "YESSSSSSSSSSSSSSSSS" : "NOOOOOOOOOOOOOOOOOOOOO") << endl;
+
+
+
 
 //		if(joystickMechanisms.GetRawButton(1)) {
 //				talonLeft1.Set(ControlMode::PercentOutput,0.2);
@@ -807,6 +1024,8 @@ public:
 
 
 
+
+
 	// DRIVE SYSTEM
 
 	bool reverseDrive = false;
@@ -814,14 +1033,25 @@ public:
 	void driveSystem()
 	{
 
+		bool newSystem = preferences->GetBoolean("driveSystem", false);
+
+
 		if (joystickMain.GetRawButton(1)) // if green a button is pressed
-			moderator =1.0; // makes robot go faster .. 1.0 for carpet
+			moderator = 1.0; // makes robot go faster .. 1.0 for carpet
 		else if (joystickMain.GetRawButton(2)) // if red b button is pressed
 			moderator = 0.3; // make it really slow
 		else // base case let it be half speed
 			moderator = 0.85; // limits the range given from the controller // 0.85 for carpet
 
 		j_x = joystickMain.GetRawAxis(1) * moderator;
+
+		if (newSystem)
+		{
+			double rightBackJoystick = joystickMain.GetRawAxis(3) * moderator;
+			double leftBackJoystick = joystickMain.GetRawAxis(2) * moderator;
+			j_x = (rightBackJoystick > leftBackJoystick ? -rightBackJoystick : leftBackJoystick);
+		}
+
 		j_y = joystickMain.GetRawAxis(0) * moderator;
 
 		if((j_x < 0 && j_x >= -0.05) || (j_x > 0 && j_x <= 0.05)) {
@@ -847,8 +1077,6 @@ public:
 
 		setLeft(speedL);
 		setRight(speedR);
-
-
 	}
 
 
@@ -883,7 +1111,21 @@ public:
 	{
 		cubeMechanism();
 		hookLiftMechanism();
+//		scaleMechanism();
 	}
+
+//
+//	void scaleMechanism()
+//	{
+//		if (joystickMechanisms.GetRawButton(10))
+//		{
+//			dropScale();
+//		}
+//		else if (joystickMechanisms.GetRawButton(9))
+//		{
+//			scoopScale();
+//		}
+//	}
 
 
 
@@ -931,6 +1173,7 @@ public:
 		if (rawAxis1 > 0.2)
 		{
 			if(!topInductiveSensor && cubeArmTiltSole->Get() != DoubleSolenoid::kReverse) {
+//				cubeLiftMotor->SetNeutralMode(NeutralMode::Coast);
 				cubeLiftMotor->Set(ControlMode::PercentOutput, 1.0); // lift the cube up
 			}
 			else {
@@ -940,6 +1183,7 @@ public:
 		else if (rawAxis1 < -0.2)
 		{
 			if(!bottomInductiveSensor && cubeArmTiltSole->Get() != DoubleSolenoid::kReverse) {
+//				cubeLiftMotor->SetNeutralMode(NeutralMode::Coast);
 				cubeLiftMotor->Set(ControlMode::PercentOutput, -1.0); // lower the cube down
 			}
 			else {
@@ -948,6 +1192,7 @@ public:
 		}
 		else
 		{
+//			cubeLiftMotor->SetNeutralMode(NeutralMode::Brake);
 			cubeLiftMotor->Set(ControlMode::PercentOutput, 0.0);
 		}
 
@@ -1027,8 +1272,12 @@ public:
 		setRight(0.0);
 		setLeft(0.0);
 
-		rightServo->SetAngle(rightServo->GetAngle() - 90);
-		leftServo->SetAngle(leftServo->GetAngle() + 90);
+//		servosIn();
+	}
+
+	void DisabledPeriodic()
+	{
+//		servosIn();
 	}
 
 };

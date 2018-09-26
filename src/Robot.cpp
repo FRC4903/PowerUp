@@ -1035,6 +1035,14 @@ public:
 
 		bool newSystem = preferences->GetBoolean("driveSystem", false);
 
+        int driveMode = preferences->GetInt("driveMode", 0);
+
+        switch(driveMode) {
+            case 0: // Accelerator turn driving
+                break;
+            case 1: // Tank driving
+                break;
+        }
 
 		if (joystickMain.GetRawButton(1)) // if green a button is pressed
 			moderator = 1.0; // makes robot go faster .. 1.0 for carpet
@@ -1061,9 +1069,6 @@ public:
 		if((j_y < 0 && j_y >= -0.05) || (j_y > 0 && j_y <= 0.05)) {
 			j_y = 0;
 		}
-
-
-
 
 		reverseDrive = joystickMain.GetRawButton(5);
 

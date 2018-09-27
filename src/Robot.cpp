@@ -1032,15 +1032,15 @@ public:
 
         int driveMode = preferences->GetInt("driveMode", 0);
 
-        switch(driveMode) {
-            case 0: // Accelerator turn driving
+		if (joystickMain.GetRawButton(1)) // if green a button is pressed
+			moderator = 1.0; // makes robot go faster .. 1.0 for carpet
+		else if (joystickMain.GetRawButton(2)) // if red b button is pressed
+			moderator = 0.3; // make it really slow
+		else // base case let it be half speed
+			moderator = 0.85; // limits the range given from the controller // 0.85 for carpet
 
-                if (joystickMain.GetRawButton(1)) // if green a button is pressed
-                    moderator = 1.0; // makes robot go faster .. 1.0 for carpet
-                else if (joystickMain.GetRawButton(2)) // if red b button is pressed
-                    moderator = 0.3; // make it really slow
-                else // base case let it be half speed
-                    moderator = 0.85; // limits the range given from the controller // 0.85 for carpet
+		switch(driveMode) {
+            case 0: // Accelerator turn driving
 
                 j_x = joystickMain.GetRawAxis(1) * moderator;
 
@@ -1088,8 +1088,8 @@ public:
                     rightStick = 0;
                 }
 
-                setLeft(leftStick);
-                setRight(rightStick);
+                setLeft(leftStick * moderator);
+                setRight(rightStick * moderator);
 
                 break;
         }

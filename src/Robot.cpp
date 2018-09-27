@@ -1021,11 +1021,6 @@ public:
 
 
 
-
-
-
-
-
 	// DRIVE SYSTEM
 
 	bool reverseDrive = false;
@@ -1039,49 +1034,66 @@ public:
 
         switch(driveMode) {
             case 0: // Accelerator turn driving
+
+                if (joystickMain.GetRawButton(1)) // if green a button is pressed
+                    moderator = 1.0; // makes robot go faster .. 1.0 for carpet
+                else if (joystickMain.GetRawButton(2)) // if red b button is pressed
+                    moderator = 0.3; // make it really slow
+                else // base case let it be half speed
+                    moderator = 0.85; // limits the range given from the controller // 0.85 for carpet
+
+                j_x = joystickMain.GetRawAxis(1) * moderator;
+
+                if (newSystem)
+                {
+                    double rightBackJoystick = joystickMain.GetRawAxis(3) * moderator;
+                    double leftBackJoystick = joystickMain.GetRawAxis(2) * moderator;
+                    j_x = (rightBackJoystick > leftBackJoystick ? -rightBackJoystick : leftBackJoystick);
+                }
+
+                j_y = joystickMain.GetRawAxis(0) * moderator;
+
+                if((j_x < 0 && j_x >= -0.05) || (j_x > 0 && j_x <= 0.05)) {
+                    j_x = 0;
+                }
+
+                if((j_y < 0 && j_y >= -0.05) || (j_y > 0 && j_y <= 0.05)) {
+                    j_y = 0;
+                }
+
+                reverseDrive = joystickMain.GetRawButton(5);
+
+                double speedL = +j_y - j_x;
+                double speedR = -j_y - j_x;
+
+                if (reverseDrive) {
+                    speedL = -j_y + j_x;
+                    speedR = +j_y + j_x;
+                }
+
+                setLeft(speedL);
+                setRight(speedR);
+
                 break;
             case 1: // Tank driving
+
+                double leftStick = joystickMain.getRawAxis(1);
+                double rightStick = joystickMain.getRawAxis(5);
+
+                if(leftStick >= -0.05 && leftStick <= 0.05) {
+                    leftStick = 0;
+                }
+
+                if(rightStick >= -0.05 && rightStick <= 0.05) {
+                    rightStick = 0;
+                }
+
+                setLeft(leftStick);
+                setRight(rightStick);
+
                 break;
         }
 
-		if (joystickMain.GetRawButton(1)) // if green a button is pressed
-			moderator = 1.0; // makes robot go faster .. 1.0 for carpet
-		else if (joystickMain.GetRawButton(2)) // if red b button is pressed
-			moderator = 0.3; // make it really slow
-		else // base case let it be half speed
-			moderator = 0.85; // limits the range given from the controller // 0.85 for carpet
-
-		j_x = joystickMain.GetRawAxis(1) * moderator;
-
-		if (newSystem)
-		{
-			double rightBackJoystick = joystickMain.GetRawAxis(3) * moderator;
-			double leftBackJoystick = joystickMain.GetRawAxis(2) * moderator;
-			j_x = (rightBackJoystick > leftBackJoystick ? -rightBackJoystick : leftBackJoystick);
-		}
-
-		j_y = joystickMain.GetRawAxis(0) * moderator;
-
-		if((j_x < 0 && j_x >= -0.05) || (j_x > 0 && j_x <= 0.05)) {
-			j_x = 0;
-		}
-
-		if((j_y < 0 && j_y >= -0.05) || (j_y > 0 && j_y <= 0.05)) {
-			j_y = 0;
-		}
-
-		reverseDrive = joystickMain.GetRawButton(5);
-
-		double speedL = +j_y - j_x;
-		double speedR = -j_y - j_x;
-
-		if (reverseDrive) {
-			speedL = -j_y + j_x;
-			speedR = +j_y + j_x;
-		}
-
-		setLeft(speedL);
-		setRight(speedR);
 	}
 
 

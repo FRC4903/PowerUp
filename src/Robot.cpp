@@ -1081,13 +1081,13 @@ public:
                 double leftStick = joystickMain.getRawAxis(1);
                 double rightStick = joystickMain.getRawAxis(5);
 
-                // if(leftStick >= -0.05 && leftStick <= 0.05) {
-                //     leftStick = 0;
-                // }
+                if(leftStick >= -0.05 && leftStick <= 0.05) {
+                    leftStick = 0;
+                }
 
-                // if(rightStick >= -0.05 && rightStick <= 0.05) {
-                //     rightStick = 0;
-                // }
+                if(rightStick >= -0.05 && rightStick <= 0.05) {
+                    rightStick = 0;
+                }
                 cout << leftStick << " lol " << rightStick << endl; //TESTING 
 
                 // setLeft(leftStick * moderator);

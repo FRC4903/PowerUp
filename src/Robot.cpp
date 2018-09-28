@@ -1,3 +1,4 @@
+// TESTING tag is for code that is just meant for testing
 #include <string>
 #include <bits/stdc++.h>
 
@@ -1087,10 +1088,12 @@ public:
                 // if(rightStick >= -0.05 && rightStick <= 0.05) {
                 //     rightStick = 0;
                 // }
-                cout << leftStick << " lol " << rightStick << endl;
+                cout << leftStick << " lol " << rightStick << endl; //TESTING 
 
-                setLeft(leftStick * moderator);
-                setRight(rightStick * moderator);
+                // setLeft(leftStick * moderator);
+                // setRight(rightStick * moderator);
+                setLeft(0.1); // this is to see whether there is output going to either of the talons TESTING
+                setRight(0.1); // TESTING
 
                 break;
         }

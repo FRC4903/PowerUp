@@ -34,11 +34,11 @@ using namespace std;
 class Robot : public frc::IterativeRobot {
 
 public:
-	Timer *timer = new Timer():
-	const double LIFT_CONSTANT_COEFFICIENT = 10:
+	Timer *timer = new Timer();
+	const double LIFT_CONSTANT_COEFFICIENT = 10;
 
-	Ultrasonic *ultraFront:
-	TalonSRX talonRight1, talonRight2, talonLeft1, talonLeft2:
+	Ultrasonic *ultraFront;
+	TalonSRX talonRight1, talonRight2, talonLeft1, talonLeft2;
 
 
 	TalonSRX *cubeLiftMotor;

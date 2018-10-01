@@ -34,11 +34,11 @@ using namespace std;
 class Robot : public frc::IterativeRobot {
 
 public:
-	Timer *timer = new Timer();
-	const double LIFT_CONSTANT_COEFFICIENT = 10;
+	Timer *timer = new Timer():
+	const double LIFT_CONSTANT_COEFFICIENT = 10:
 
-	Ultrasonic *ultraFront;
-	TalonSRX talonRight1, talonRight2, talonLeft1, talonLeft2;
+	Ultrasonic *ultraFront:
+	TalonSRX talonRight1, talonRight2, talonLeft1, talonLeft2:
 
 
 	TalonSRX *cubeLiftMotor;
@@ -1040,65 +1040,65 @@ public:
 		else // base case let it be half speed
 			moderator = 0.85; // limits the range given from the controller // 0.85 for carpet
 
-		switch(driveMode) {
-            case 0: // Accelerator turn driving
+		// switch(driveMode) {
+        if (driveMode == 0){ // Accelerator turn driving
 
-                j_x = joystickMain.GetRawAxis(1) * moderator;
+            j_x = joystickMain.GetRawAxis(1) * moderator;
 
-                if (newSystem)
-                {
-                    double rightBackJoystick = joystickMain.GetRawAxis(3) * moderator;
-                    double leftBackJoystick = joystickMain.GetRawAxis(2) * moderator;
-                    j_x = (rightBackJoystick > leftBackJoystick ? -rightBackJoystick : leftBackJoystick);
-                }
+            if (newSystem)
+            {
+                double rightBackJoystick = joystickMain.GetRawAxis(3) * moderator;
+                double leftBackJoystick = joystickMain.GetRawAxis(2) * moderator;
+                j_x = (rightBackJoystick > leftBackJoystick ? -rightBackJoystick : leftBackJoystick);
+            }
 
-                j_y = joystickMain.GetRawAxis(0) * moderator;
+            j_y = joystickMain.GetRawAxis(0) * moderator;
 
-                if((j_x < 0 && j_x >= -0.05) || (j_x > 0 && j_x <= 0.05)) {
-                    j_x = 0;
-                }
+            if((j_x < 0 && j_x >= -0.05) || (j_x > 0 && j_x <= 0.05)) {
+                j_x = 0;
+            }
 
-                if((j_y < 0 && j_y >= -0.05) || (j_y > 0 && j_y <= 0.05)) {
-                    j_y = 0;
-                }
+            if((j_y < 0 && j_y >= -0.05) || (j_y > 0 && j_y <= 0.05)) {
+                j_y = 0;
+            }
 
-                reverseDrive = joystickMain.GetRawButton(5);
+            reverseDrive = joystickMain.GetRawButton(5);
 
-                double speedL = +j_y - j_x;
-                double speedR = -j_y - j_x;
+            double speedL = +j_y - j_x;
+            double speedR = -j_y - j_x;
 
-                if (reverseDrive) {
-                    speedL = -j_y + j_x;
-                    speedR = +j_y + j_x;
-                }
+            if (reverseDrive) {
+                speedL = -j_y + j_x;
+                speedR = +j_y + j_x;
+            }
 
-                setLeft(speedL);
-                setRight(speedR);
+            setLeft(speedL);
+            setRight(speedR);
 
-                break;
-            case 1: // Tank driving
+            // break;
+        }else if (driveMode == 1){ // Tank driving
 
-                double leftStick = joystickMain.getRawAxis(1);
-                double rightStick = joystickMain.getRawAxis(5);
+            double leftStick = joystickMain.getRawAxis(1);
+            double rightStick = joystickMain.getRawAxis(5);
 
-                if(leftStick >= -0.05 && leftStick <= 0.05) {
-                    leftStick = 0;
-                }
+            if(leftStick >= -0.05 && leftStick <= 0.05) {
+                leftStick = 0;
+            }
 
-                if(rightStick >= -0.05 && rightStick <= 0.05) {
-                    rightStick = 0;
-                }
-                cout << leftStick << " lol " << rightStick << endl; //TESTING 
+            if(rightStick >= -0.05 && rightStick <= 0.05) {
+                rightStick = 0;
+            }
+            cout << leftStick << " lol " << rightStick << endl; //TESTING 
 
-                // setLeft(leftStick * moderator);
-                // setRight(rightStick * moderator);
-                setLeft(0.1); // this is to see whether there is output going to either of the talons TESTING
-                setRight(0.1); // TESTING
+            // setLeft(leftStick * moderator);
+            // setRight(rightStick * moderator);
+            setLeft(0.1); // this is to see whether there is output going to either of the talons TESTING
+            setRight(0.1); // TESTING
 
-                break;
-        }
+            // break;
+    }
 
-	}
+	// }
 
 
 	void setRight(double value)

@@ -23,13 +23,8 @@
 
 #include <iostream>
 
-
 using namespace frc;
 using namespace std;
-
-
-
-
 
 class Robot : public frc::IterativeRobot {
 
@@ -93,11 +88,8 @@ public:
 
 	double cubeLiftSpeed = 0.75;
 
-
 //	Servo *rightServo = new Servo(2);
 //	Servo *leftServo = new Servo(3);
-
-
 
 	// SETUP SECTION
 	//
@@ -123,7 +115,6 @@ public:
 		beginningDiff = -1000000;
 		moderator = 0.5;
 		timer->Start();
-
 	}
 
 	void RobotInit() {
@@ -135,11 +126,7 @@ public:
 
 		autoTimer->Start();
 
-
 		cubeArmTiltSole->Set(DoubleSolenoid::kReverse);
-
-
-
 
 		gyro.Calibrate();
 		gyro.Reset();
@@ -151,13 +138,7 @@ public:
 
 		cubeLiftMotor->SetNeutralMode(NeutralMode::Brake);
 
-		//////////
-		////////
-		/////
 		cubeLiftMotor->SetInverted(true);
-		/////
-		///////
-		/////////
 
 		talonRight1.SetNeutralMode(NeutralMode::Coast);
 		talonRight2.SetNeutralMode(NeutralMode::Coast);
@@ -176,13 +157,11 @@ public:
 //		camera->SetFPS(14);
 //		camera->SetResolution(320, 240);
 
-
 //		cs::UsbCamera camera = CameraServer::GetInstance()->StartAutomaticCapture();
 //		camera.SetFPS(20);
 //		camera.SetResolution(213, 160);
 		CameraServer::GetInstance()->StartAutomaticCapture();
 	}
-
 
 //	void dropScale()
 //	{
@@ -209,13 +188,6 @@ public:
 		talon->Config_kI(kPIDLoopIdx, 0.0, kTimeoutMs);
 		talon->Config_kD(kPIDLoopIdx, 0.0, kTimeoutMs);
 }
-
-
-
-
-
-
-
 
 	// Autonomous SECTION
 		//
@@ -945,7 +917,6 @@ public:
 		stopDriveMotors();
 	}
 
-
 	void turnAndBringDown(int angleInt,double initial=0.6)
 	{
 		double angle = double(angleInt);
@@ -986,15 +957,6 @@ public:
 		}
 		stopDriveMotors();
 	}
-
-
-
-
-
-
-
-
-
 	// TELEOP SECTION
 	//
 	//
@@ -1059,14 +1021,6 @@ public:
 //			forwardUltrasonic();
 //		}
 	}
-
-
-
-
-
-
-
-
 	// DRIVE SYSTEM
 
 	bool reverseDrive = false;
@@ -1074,6 +1028,7 @@ public:
 	void driveSystem()
 	{
 		int driveMode = SmartDashboard::GetNumber("DB/Slider 2", 0.0);
+		// int subDriveMode = SmartDashboard::GetNumber("DB/Slider 3", 0.0);
 		bool newSystem = preferences->GetBoolean("driveSystem", false);
 
 		if (joystickMain.GetRawButton(1)) // if green a button is pressed
@@ -1083,10 +1038,6 @@ public:
 		else // base case let it be half speed
 			moderator = 0.7;
 //			moderator = 0.85; // limits the range given from the controller // 0.85 for carpet
-
-		//switch (driveMode) {
-		//	case 0:
-
 
 		if (driveMode == 0.0) {
 				j_x = joystickMain.GetRawAxis(1) * moderator;
@@ -1138,32 +1089,40 @@ public:
 				setLeft(leftStick * moderator*-1);
 				setRight(rightStick * moderator*-1);
 
-				//break;
-
-		} else if (driveMode == 2.0) { // Single analog
-			j_x = joystickMain.GetRawAxis(5) * moderator;
-			j_y = joystickMain.GetRawAxis(4) * moderator;
+		} else if (driveMode == 2.0 || driveMode == 2.5) { // Single analog
+			if (driveMode == 2.5){
+				j_x = joystickMain.GetRawAxis(5) * moderator; // Right X
+				j_y = joystickMain.GetRawAxis(4) * moderator; // Right Y
+			}else{
+				j_x = joystickMain.GetRawAxis(0) * moderator; // Left X
+				j_y = joystickMain.GetRawAxis(1) * moderator; // Left Y
+			}
 			double speedR;
 			double speedL;
 			if ((joystickMain.GetRawAxis(3)) > 0){
 				speedR = j_y - j_x;
 				speedL = -j_y - j_x;
-
 			}
 
 			else{
-
-
 				speedR = -j_y - j_x;
 				speedL = j_y - j_x;
 			}
 
 			setLeft(speedL);
 			setRight(speedR);
+		} else if (driveMode == 3.0){ // RC Drive (One Axis per analog stick)
+			j_x = joystickMain.GetRawAxis(0) * moderator;
+			j_y = joystickMain.GetRawAxis(5) * moderator;
+
+			double speedR = -j_y - j_x;
+			double speedL = j_y - j_x;
+
+			setLeft(speedL);
+			setRight(speedR);
 		}
 
 	}
-
 
 	void setRight(double value)
 	{
@@ -1182,11 +1141,6 @@ public:
 		setRight(0.0);
 		setLeft(0.0);
 	}
-
-
-
-
-
 
 	// MECHANISMS
 	//
@@ -1211,8 +1165,6 @@ public:
 //			scoopScale();
 //		}
 //	}
-
-
 
 	//  Mechanism
 	void setHookMotors(double val) {
@@ -1241,10 +1193,7 @@ public:
 		}
 	}
 
-
-
 	// CUBE MECHANISM
-
 	void cubeMechanism() {
 		if(joystickMechanisms.GetRawButton(8)) {
 			setCubeArmTilt(true);
@@ -1280,8 +1229,6 @@ public:
 //			cubeLiftMotor->SetNeutralMode(NeutralMode::Brake);
 			cubeLiftMotor->Set(ControlMode::PercentOutput, 0.0);
 		}
-
-
 	}
 
 	void pushCubeMotorsOut()
@@ -1337,9 +1284,6 @@ public:
 
 	}
 
-
-
-
 	// SENSORS
 	void getInductiveSensors() {
 		topInductiveSensor = (cubeLiftInductiveTop.GetVoltage() > 3.0 ? true : false);
@@ -1351,20 +1295,16 @@ public:
 
 	}
 
+// 	void DisabledInit() {
+// 		setRight(0.0);
+// 		setLeft(0.0);
 
+// //		servosIn();
+// 	}
 
-	void DisabledInit() {
-		setRight(0.0);
-		setLeft(0.0);
-
-//		servosIn();
-	}
-
-	void DisabledPeriodic()
-	{
-//		servosIn();
-	}
-
+// 	void DisabledPeriodic()
+// 	{
+// //		servosIn();
+// 	}
 };
-
 START_ROBOT_CLASS(Robot)

@@ -1066,7 +1066,7 @@ public:
 				if (reverseDrive) {
 					speedL = -j_y + j_x;
 					speedR = +j_y + j_x;
-				}
+				}	
 
 				setLeft(speedL);
 				setRight(speedR);
@@ -1111,9 +1111,16 @@ public:
 
 			setLeft(speedL);
 			setRight(speedR);
-		} else if (driveMode == 3.0){ // RC Drive (One Axis per analog stick)
-			j_x = joystickMain.GetRawAxis(0) * moderator;
-			j_y = joystickMain.GetRawAxis(5) * moderator;
+		} else if (driveMode == 3.0 || driveMode == 3.5){ // RC Drive (One Axis per analog stick)
+			if (driveMode == 3.0){
+				j_x = joystickMain.GetRawAxis(1) * moderator;
+				j_y = joystickMain.GetRawAxis(4) * moderator;	
+			}else{
+				// j_x = joystickMain.GetRawAxis(0) * moderator;
+				// j_y = joystickMain.GetRawAxis(5) * moderator;
+				j_x = joystickMain.GetRawAxis(5) * moderator;
+				j_y = joystickMain.GetRawAxis(0) * moderator;
+			}
 
 			double speedR = -j_y - j_x;
 			double speedL = j_y - j_x;

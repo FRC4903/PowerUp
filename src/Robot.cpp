@@ -224,7 +224,6 @@ public:
 //		servosOut();
 	}
 
-
 //	void servosOut()
 //	{
 //		rightServo->Set(0.1);
@@ -1099,7 +1098,8 @@ public:
 			}
 			double speedR;
 			double speedL;
-			if ((joystickMain.GetRawAxis(3)) > 0){
+			// if ((joystickMain.GetRawAxis(3)) > 0){
+			if (j_y < 0){
 				speedR = j_y - j_x;
 				speedL = -j_y - j_x;
 			}
@@ -1289,7 +1289,6 @@ public:
 		topHookInductiveSensor = (hookLiftInductiveTop.GetVoltage() > 3.0 ? true: false);
 		bottomHookInductiveSensor = (hookLiftInductiveBottom.GetVoltage() > 3.0 ? true : false);
 	}
-
 // 	void DisabledInit() {
 // 		setRight(0.0);
 // 		setLeft(0.0);

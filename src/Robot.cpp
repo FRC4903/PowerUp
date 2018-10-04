@@ -1121,7 +1121,6 @@ public:
 			setLeft(speedL);
 			setRight(speedR);
 		}
-
 	}
 
 	void setRight(double value)
@@ -1267,7 +1266,6 @@ public:
 		{
 			setCubeMotors(rawAxis3);
 		}
-
 		else {
 			stopCubeMotors();
 		}
@@ -1281,7 +1279,6 @@ public:
 		else {
 			cubeArmTiltSole->Set(DoubleSolenoid::kReverse);
 		}
-
 	}
 
 	// SENSORS
@@ -1289,10 +1286,8 @@ public:
 		topInductiveSensor = (cubeLiftInductiveTop.GetVoltage() > 3.0 ? true : false);
 		bottomInductiveSensor = (cubeLiftInductiveBottom.GetVoltage() > 3.0 ? true : false);
 
-
 		topHookInductiveSensor = (hookLiftInductiveTop.GetVoltage() > 3.0 ? true: false);
 		bottomHookInductiveSensor = (hookLiftInductiveBottom.GetVoltage() > 3.0 ? true : false);
-
 	}
 
 // 	void DisabledInit() {

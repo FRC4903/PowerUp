@@ -1101,7 +1101,7 @@ public:
 
 //			if ((joystickMain.GetRawAxis(3)) > 0){
 			if (j_y < 0){
-				speedR = -j_y - j_x;
+				speedR = j_y - j_x;
 				speedL = -j_y - j_x;
 			}
 
@@ -1122,8 +1122,8 @@ public:
 			}
 
 			if (j_y < 0){
-				double speedR = -j_y - j_x;
-				double speedL = j_y - j_x; 	
+				double speedR = j_y - j_x;
+				double speedL = -j_y - j_x; 	
 			}else{
 				double speedR = -j_y - j_x;
 				double speedL = j_y - j_x;

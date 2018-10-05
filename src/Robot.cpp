@@ -1027,7 +1027,7 @@ public:
 	void driveSystem()
 	{
 		int driveMode = SmartDashboard::GetNumber("DB/Slider 2", 0.0);
-		// int subDriveMode = SmartDashboard::GetNumber("DB/Slider 3", 0.0);
+		int subDriveMode = SmartDashboard::GetNumber("DB/Slider 3", 0.0);
 		bool newSystem = preferences->GetBoolean("driveSystem", false);
 
 		if (joystickMain.GetRawButton(1)) // if green a button is pressed
@@ -1088,11 +1088,11 @@ public:
 				setLeft(leftStick * moderator*-1);
 				setRight(rightStick * moderator*-1);
 
-		} else if (driveMode == 2.0 || driveMode == 3.0) { // Single analog
-			if (driveMode == 3){ //Right analog
+		} else if (driveMode == 2.0 && subDriveMode == 1.0 || subDriveMode == 2.0) { // Single analog
+			if (subDriveMode == 1){ //Right analog
 				j_x = joystickMain.GetRawAxis(5); //  * moderator // Right X
 				j_y = joystickMain.GetRawAxis(4); //  * moderator // Right Y
-			}else{ //Left analog
+			}else if (subDriveMode == 2.0){ //Left analog
 				j_x = joystickMain.GetRawAxis(1); //  * moderator // Left X
 				j_y = joystickMain.GetRawAxis(0); //  * moderator // Left Y
 			}
@@ -1112,13 +1112,13 @@ public:
 
 			setLeft(speedL * moderator);
 			setRight(speedR * moderator);
-		} else if (driveMode == 4.0 || driveMode == 5.0){ // RC Drive (One Axis per analog stick)
-			if (driveMode == 4.0){ //Right analog
-				j_x = joystickMain.GetRawAxis(1) * moderator; //Left Y
-				j_y = joystickMain.GetRawAxis(4) * moderator; //Right X
-			}else{ //Left analog
-				j_x = joystickMain.GetRawAxis(5) * moderator; // Right Y
-				j_y = joystickMain.GetRawAxis(0) * moderator; // Left X
+		} else if (driveMode == 3.0 && subDriveMode == 1.0 || subDriveMode == 2.0){ // RC Drive (One Axis per analog stick)
+			if (driveMode == 1.0){ //Right analog
+				j_x = joystickMain.GetRawAxis(1); //* moderator; //Left Y
+				j_y = joystickMain.GetRawAxis(4); //* moderator; //Right X
+			}else if (subDriveMode == 2.0){ //Left analog
+				j_x = joystickMain.GetRawAxis(5); //* moderator; // Right Y
+				j_y = joystickMain.GetRawAxis(0); //* moderator; // Left X
 			}
 
 			if (j_y < 0){

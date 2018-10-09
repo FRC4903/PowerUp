@@ -1099,7 +1099,7 @@ public:
 			double speedR = 0;
 			double speedL = 0;
 
-//			if ((joystickMain.GetRawAxis(3)) > 0){
+			// if ((joystickMain.GetRawAxis(3)) > 0){
 			if (j_y < 0){
 				speedR = j_y - j_x;
 				speedL = -j_y - j_x;
@@ -1129,8 +1129,8 @@ public:
 				double speedL = j_y - j_x;
 			}
 
-			setLeft(speedL);
-			setRight(speedR);
+			setLeft(speedL * moderator);
+			setRight(speedR * moderator);
 		}
 	}
 

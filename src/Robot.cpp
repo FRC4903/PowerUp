@@ -1026,6 +1026,7 @@ public:
 
 	void driveSystem()
 	{
+		double speed = SmartDashboard::GetNumber("DB/Slider 1", 0.7);
 		int driveMode = SmartDashboard::GetNumber("DB/Slider 2", 0.0);
 		int subDriveMode = SmartDashboard::GetNumber("DB/Slider 3", 0.0);
 		bool newSystem = preferences->GetBoolean("driveSystem", false);
@@ -1035,7 +1036,8 @@ public:
 		else if (joystickMain.GetRawButton(2)) // if red b button is pressed
 			moderator = 0.5; // make it really slow
 		else // base case let it be half speed
-			moderator = 0.7;
+			// moderator = 0.7;
+			moderator = speed;
 //			moderator = 0.85; // limits the range given from the controller // 0.85 for carpet
 
 		if (driveMode == 0.0) {
@@ -1088,7 +1090,7 @@ public:
 				setLeft(leftStick * moderator*-1);
 				setRight(rightStick * moderator*-1);
 
-		} else if (driveMode == 2.0 && subDriveMode == 1.0 || subDriveMode == 2.0) { // Single analog
+		} else if (driveMode == 2.0 && subDriveMode == 1.0 || driveMode == 2.0 && subDriveMode == 2.0) { // Single analog
 			if (subDriveMode == 1){ //Right analog
 				j_x = joystickMain.GetRawAxis(5); //  * moderator // Right X
 				j_y = joystickMain.GetRawAxis(4); //  * moderator // Right Y
@@ -1112,7 +1114,7 @@ public:
 
 			setLeft(speedL * moderator);
 			setRight(speedR * moderator);
-		} else if (driveMode == 3.0 && subDriveMode == 1.0 || subDriveMode == 2.0){ // RC Drive (One Axis per analog stick)
+		} else if (driveMode == 3.0 && subDriveMode == 1.0 || driveMode == 3.0 && subDriveMode == 2.0){ // RC Drive (One Axis per analog stick)
 			if (driveMode == 1.0){ //Right analog
 				j_x = joystickMain.GetRawAxis(1); //* moderator; //Left Y
 				j_y = joystickMain.GetRawAxis(4); //* moderator; //Right X
@@ -1120,7 +1122,7 @@ public:
 				j_x = joystickMain.GetRawAxis(5); //* moderator; // Right Y
 				j_y = joystickMain.GetRawAxis(0); //* moderator; // Left X
 			}
-
+			// if ((joystickMain.GetRawAxis(3)) > 0){
 			if (j_y < 0){
 				double speedR = j_y - j_x;
 				double speedL = -j_y - j_x; 	
